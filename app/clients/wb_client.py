@@ -72,13 +72,6 @@ class WBClient:
         resp.raise_for_status()
         return resp.json()
 
-    def list_questions(self, *, is_answered: bool, take: int, skip: int) -> dict[str, Any]:
-        rate.wait()
-        params = {"isAnswered": str(is_answered).lower(), "take": take, "skip": skip}
-        resp = self.s.get(f"{self.base}/questions", params=params, timeout=30)
-        resp.raise_for_status()
-        return resp.json()
-
     def send_feedback_answer(self, feedback_id: int | str, text: str) -> dict[str, Any]:
         rate.wait()
         payload = {"id": str(feedback_id), "text": text}
@@ -88,56 +81,6 @@ class WBClient:
             resp.raise_for_status()
         except requests.HTTPError as e:
             self._log_http_error("WB feedback answer failed", url, payload, resp, e)
-            raise
-        return resp.json() if resp.content else {"ok": True}
-
-    def send_question_answer(self, question_id: int | str, text: str) -> dict[str, Any]:
-        rate.wait()
-        url = f"{self.base}/questions"
-
-        payload_a = {"id": str(question_id), "state": "wbRu", "answer": {"text": text}}
-        resp = self.s.patch(url, json=payload_a, timeout=30)
-
-        if 200 <= resp.status_code < 300:
-            return resp.json() if resp.content else {"ok": True}
-
-        try:
-            body = resp.json()
-            err_text = (body or {}).get("errorText", "") or ""
-        except Exception:
-            err_text = resp.text or ""
-
-        if resp.status_code == 400 and (
-            "Empty state" in err_text
-            or "Неправильный текст ответа" in err_text
-        ):
-            payload_b = {"id": str(question_id), "state": "wbRu", "text": text}
-            resp_b = self.s.patch(url, json=payload_b, timeout=30)
-            if 200 <= resp_b.status_code < 300:
-                return resp_b.json() if resp_b.content else {"ok": True}
-            try:
-                resp_b.raise_for_status()
-            except requests.HTTPError as e2:
-                self._log_http_error("WB question answer failed (fallback B)", url, payload_b, resp_b, e2)
-                raise
-
-        try:
-            resp.raise_for_status()
-        except requests.HTTPError as e:
-            self._log_http_error("WB question answer failed", url, payload_a, resp, e)
-            raise
-
-        return resp.json() if resp.content else {"ok": True}
-
-    def reject_question(self, question_id: int | str) -> dict[str, Any]:
-        rate.wait()
-        url = f"{self.base}/questions"
-        payload = {"id": str(question_id), "state": "none"}
-        resp = self.s.patch(url, json=payload, timeout=30)
-        try:
-            resp.raise_for_status()
-        except requests.HTTPError as e:
-            self._log_http_error("WB question reject failed", url, payload, resp, e)
             raise
         return resp.json() if resp.content else {"ok": True}
 

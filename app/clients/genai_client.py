@@ -79,7 +79,7 @@ class _GeminiAdapter:
 
         self.model = genai.GenerativeModel(
             model_name=self.model_name,
-            system_instruction= PROMPT,
+            system_instruction=PROMPT,
         )
 
     def _swap_model(self, new_name: str) -> None:
@@ -262,13 +262,11 @@ def _render_no_text_reply(product: str | None, recos: Sequence[str]) -> str:
         lines.append("🔹 " + "\n🔹 ".join(recos))
     return "\n".join(lines).strip()
 
-
-
-def get_model():
+def get_model(token_override: str | None = None):
     api = settings.api_keys
-    token = getattr(api, "GEMINI_TOKEN", None)
+    token = token_override or getattr(api, "GEMINI_TOKEN", None)
     if not token:
-        raise RuntimeError("GEMINI_TOKEN is not set")
+        raise RuntimeError("GEMINI_TOKEN is not set and no token_override provided")
 
     raw_name = getattr(api, "GEMINI_MODEL", None) or "gemini-2.5-flash"
     model_name = _normalize_model_name(raw_name)
