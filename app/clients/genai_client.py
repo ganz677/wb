@@ -57,6 +57,8 @@ Armoule — пусть аромат говорит первым.
 
 
 UNICODE_DASHES_RE = re.compile(r"[\u2010-\u2015\u2212\uFE58\uFE63\uFF0D]")
+
+
 def _normalize_model_name(name: str) -> str:
     return UNICODE_DASHES_RE.sub("-", name or "")
 
@@ -140,8 +142,10 @@ class _GeminiAdapter:
                             attempt, min(delay, 15.0), msg)
                 time.sleep(min(delay, 15.0))
 
+
 _RETRY_IN_RE = re.compile(r"(retry in|retry_after|retry-after)\s*:?[\s=]*([0-9]+(?:\.[0-9]+)?)", re.IGNORECASE)
 _RETRY_SECONDS_BLOCK_RE = re.compile(r"retry_delay\s*\{\s*seconds:\s*([0-9]+)", re.IGNORECASE)
+
 
 def _extract_retry_after(err_msg: str) -> Optional[float]:
     m = _RETRY_IN_RE.search(err_msg or "")
@@ -177,11 +181,13 @@ def _dedup_keep_order(items: Sequence[str], limit: int | None = None) -> List[st
             break
     return out
 
+
 def _join_block(title: str, lines: Sequence[str]) -> str:
     data = _dedup_keep_order(lines, limit=80)
     if not data:
         return f"{title}:\n—"
     return f"{title}:\n" + "\n".join(f"- {t}" for t in data)
+
 
 def _extract_title_from_bullet(line: str) -> Optional[str]:
     s = line.strip()
@@ -194,10 +200,12 @@ def _extract_title_from_bullet(line: str) -> Optional[str]:
     title = (parts[0] if parts else s).strip().strip("*")
     return title or None
 
+
 _NO_TEXT_MARKERS = {
     "отзыв без текста.",
     "вопрос без текста.",
 }
+
 
 def _is_no_text_feedback(inp: AnswerInput) -> bool:
     if getattr(inp, "kind", None) != "feedback":
@@ -208,6 +216,7 @@ def _is_no_text_feedback(inp: AnswerInput) -> bool:
     if t in _NO_TEXT_MARKERS:
         return True
     return len(t) <= 2
+
 
 def _pick_recos(
     preferred: Sequence[str] | None,
@@ -242,6 +251,7 @@ def _pick_recos(
 
     return out[:k]
 
+
 _NO_TEXT_VARIANTS = [
     "Спасибо за доверие! Если вам близок характер «{product}», загляните в профиль Armoule — там ждут новые истории ароматов.",
     "Благодарим за высокую оценку! Если настроение «{product}» вам откликнулось, посмотрите ещё ароматы Armoule.",
@@ -253,6 +263,7 @@ _NO_TEXT_VARIANTS = [
     "Признательны за 5★! Если «{product}» понравился, в профиле Armoule вас ждут родственные настроения.",
 ]
 
+
 def _render_no_text_reply(product: str | None, recos: Sequence[str]) -> str:
     p = (product or "").strip()
     idx = (abs(hash(p.lower())) % len(_NO_TEXT_VARIANTS)) if p else 0
@@ -262,11 +273,12 @@ def _render_no_text_reply(product: str | None, recos: Sequence[str]) -> str:
         lines.append("🔹 " + "\n🔹 ".join(recos))
     return "\n".join(lines).strip()
 
-def get_model(token_override: str | None = None):
+
+def get_model():
     api = settings.api_keys
-    token = token_override or getattr(api, "GEMINI_TOKEN", None)
+    token = getattr(api, "GEMINI_TOKEN", None)
     if not token:
-        raise RuntimeError("GEMINI_TOKEN is not set and no token_override provided")
+        raise RuntimeError("GEMINI_TOKEN is not set")
 
     raw_name = getattr(api, "GEMINI_MODEL", None) or "gemini-2.5-flash"
     model_name = _normalize_model_name(raw_name)

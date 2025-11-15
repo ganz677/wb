@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from datetime import datetime
 import sys
 import traceback
+from datetime import datetime
 
 from app.core.logger import setup_logging
 from app.db import get_session
@@ -18,16 +18,20 @@ def main() -> int:
     arch_count = 0
     reg_count = 0
 
+    # одна сессия на оба процесса — коммиты выполняются внутри функций
     with get_session() as session:
+        # 1) архив
         try:
             arch_count = ingest_feedbacks_archive(session)
-            print(f"Archived ingested: {arch_count}")
+            print(f"✅ Archived ingested: {arch_count}")
         except Exception as e:
-            print("Archived ingest failed:", e, file=sys.stderr)
+            print("❌ Archived ingest failed:", e, file=sys.stderr)
             traceback.print_exc()
+
+        # 2) обычные
         try:
             reg_count = ingest_feedbacks(session)
-            print(f"✅ Regular ingested:  {reg_count}")
+            print(f"✅ Regular ingested: {reg_count}")
         except Exception as e:
             print("❌ Regular ingest failed:", e, file=sys.stderr)
             traceback.print_exc()
@@ -36,6 +40,7 @@ def main() -> int:
     finished = datetime.now()
     print(f"[{finished}] Done. Total ingested: {total} (archived={arch_count}, regular={reg_count})")
 
+    # Если обе части упали — вернуть ненулевой код
     return 0 if (arch_count or reg_count) else 1
 
 

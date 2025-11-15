@@ -1,8 +1,12 @@
+from __future__ import annotations
+
 import os
+
 from dotenv import load_dotenv
 from pydantic import BaseModel
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+# грузим .env из корня проекта
 load_dotenv(os.path.join(os.path.dirname(__file__), "../../.env"))
 
 
@@ -22,10 +26,8 @@ class DataBaseSettings(BaseModel):
 class APISettings(BaseModel):
     WB_TOKEN: str | None = None
     WB_BASE_URL: str = "https://feedbacks-api.wildberries.ru/api/v1"
-
-    GEMINI_TOKENS: str | None = None
+    GEMINI_TOKEN: str | None = None
     GEMINI_MODEL: str | None = "gemini-2.5-flash"
-
     TAKE: int = 500
     POLL_INTERVAL_SEC: int = 30
 
@@ -43,7 +45,6 @@ class Settings(BaseSettings):
 
     db: DataBaseSettings
     api_keys: APISettings
-
 
 
 settings: Settings = Settings()
